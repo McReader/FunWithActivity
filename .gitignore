@@ -1,0 +1,15 @@
+node_modules
+.serverless
+
+# Environment
+.env
+
+# IDE
+.idea
+.vscode
+
+# Logs
+*.log
+
+# OS
+.DS_Store

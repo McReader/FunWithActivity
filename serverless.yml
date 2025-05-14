@@ -39,6 +39,16 @@ functions:
           startingPosition: LATEST
           maximumRetryAttempts: 3
 
+  processUserStatsChanges:
+    handler: src/functions/recommendations/processUserStatsChanges.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt UserStatsTable.StreamArn
+          batchSize: 25
+          startingPosition: LATEST
+          maximumRetryAttempts: 3
+
 resources:
   Resources:
     ActivityStream:
@@ -59,6 +69,8 @@ resources:
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
 
     ApiGatewayRole:
       Type: AWS::IAM::Role

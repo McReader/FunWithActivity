@@ -12,8 +12,8 @@ Content-Type: application/json
 {
   "userId": "550e8400-e29b-41d4-a716-446655440000",
   "type": "body-params",
-  "weight": 54,
-  "height": 168
+  "weight": 88,
+  "height": 165
 }
 
 ###

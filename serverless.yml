@@ -49,6 +49,17 @@ functions:
           startingPosition: LATEST
           maximumRetryAttempts: 3
 
+  getRecommendationsA:
+    handler: src/functions/recommendations/getRecommendationsA.handler
+
+  getRecommendationsB:
+    handler: src/functions/recommendations/getRecommendationsB.handler
+
+  aggregateRecommendations:
+    handler: src/functions/recommendations/aggregateRecommendations.handler
+    environment:
+      RECOMMENDATIONS_TABLE: ${self:service}-${self:provider.stage}-user-recommendations
+
 resources:
   Resources:
     ActivityStream:
@@ -71,6 +82,18 @@ resources:
             KeyType: HASH
         StreamSpecification:
           StreamViewType: NEW_IMAGE
+
+    UserRecommendationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-user-recommendations
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
 
     ApiGatewayRole:
       Type: AWS::IAM::Role

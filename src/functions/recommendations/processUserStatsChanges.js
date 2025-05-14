@@ -1,35 +1,24 @@
+const { SFNClient, StartExecutionCommand } = require("@aws-sdk/client-sfn");
+const sfnClient = new SFNClient();
+
 exports.handler = async (event) => {
   try {
-    for (const record of event.Records) {
-      // Skip if this is not an INSERT or MODIFY event
-      if (record.eventName !== 'INSERT' && record.eventName !== 'MODIFY') {
-        continue;
-      }
+    const records = event.Records
+      .filter(record => record.eventName === 'INSERT' || record.eventName === 'MODIFY')
+      .map(record => record.dynamodb.NewImage);
 
-      // Get the new image (the current state of the item)
-      const newImage = record.dynamodb.NewImage;
-
-      console.log('Event Type:', record.eventName);
-      console.log('New Image:', JSON.stringify(newImage, null, 2));
-
-      // Here you can add your business logic to process the changes
-      // For example:
-      // - Send notifications
-      // - Update other systems
-      // - Trigger additional workflows
-      // - etc.
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'Successfully processed DynamoDB Stream events',
-        recordCount: event.Records.length
+    const command = new StartExecutionCommand({
+      stateMachineArn: process.env.STATE_MACHINE_ARN,
+      input: JSON.stringify({
+        Records: records,
       })
-    };
+    });
 
+    await sfnClient.send(command);
+
+    return { statusCode: 200 };
   } catch (error) {
-    console.error('Error processing DynamoDB Stream events:', error);
+    console.error('Error:', error);
     throw error;
   }
 };

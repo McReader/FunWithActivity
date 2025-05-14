@@ -15,9 +15,9 @@ exports.handler = async (event) => {
 };
 
 const fetchUserRecommendations = async (record) => {
-  const userId = record.userId.S;
-  const height = record.height.N;
-  const weight = record.weight.N;
+  const userId = record.userId;
+  const height = record.height;
+  const weight = record.weight;
 
   const response = await axios.post('https://a2da22tugdqsame4ckd3oohkmu0tnbne.lambda-url.eu-central-1.on.aws/services/service2', {
     "measurements": {
@@ -43,8 +43,6 @@ const fetchUserRecommendations = async (record) => {
   }
 
   const recommendations = responseJSON?.map((rec) => ({
-    id: uuidv4(),
-    userId,
     source: "serviceB",
     title: rec.title,
     details: rec.details,

@@ -158,12 +158,38 @@ resources:
                     GetRecommendationsA:
                       Type: Task
                       Resource: !GetAtt GetRecommendationsALambdaFunction.Arn
+                      Retry:
+                        - ErrorEquals: [ "States.ALL" ]
+                          IntervalSeconds: 1
+                          MaxAttempts: 2
+                          BackoffRate: 2
+                      Catch:
+                        - ErrorEquals: [ "States.ALL" ]
+                          ResultPath: "$.error"
+                          Next: HandleRecommendationsAError
+                      End: true
+                    HandleRecommendationsAError:
+                      Type: Pass
+                      Result: {}
                       End: true
                 - StartAt: GetRecommendationsB
                   States:
                     GetRecommendationsB:
                       Type: Task
                       Resource: !GetAtt GetRecommendationsBLambdaFunction.Arn
+                      Retry:
+                        - ErrorEquals: [ "States.ALL" ]
+                          IntervalSeconds: 1
+                          MaxAttempts: 2
+                          BackoffRate: 2
+                      Catch:
+                        - ErrorEquals: [ "States.ALL" ]
+                          ResultPath: "$.error"
+                          Next: HandleRecommendationsBError
+                      End: true
+                    HandleRecommendationsBError:
+                      Type: Pass
+                      Result: {}
                       End: true
             AggregateResults:
               Type: Task

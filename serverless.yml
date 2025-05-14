@@ -34,6 +34,14 @@ provider:
             - dynamodb:GetItem
           Resource: !GetAtt UserRecommendationsTable.Arn
 
+custom:
+  recommendationsA:
+    dev:
+      url: 'https://a2da22tugdqsame4ckd3oohkmu0tnbne.lambda-url.eu-central-1.on.aws/services/service1'
+  recommendationsB:
+    dev:
+      url: 'https://a2da22tugdqsame4ckd3oohkmu0tnbne.lambda-url.eu-central-1.on.aws/services/service2'
+
 functions:
   processStreamLogs:
     handler: src/functions/ingestion/processStreamLogs.handler
@@ -60,9 +68,15 @@ functions:
 
   getRecommendationsA:
     handler: src/functions/recommendations/getRecommendationsA.handler
+    environment:
+      API_URL: ${self:custom.recommendationsA.${self:provider.stage}.url}
+    timeout: 10
 
   getRecommendationsB:
     handler: src/functions/recommendations/getRecommendationsB.handler
+    environment:
+      API_URL: ${self:custom.recommendationsB.${self:provider.stage}.url}
+    timeout: 10
 
   aggregateRecommendations:
     handler: src/functions/recommendations/aggregateRecommendations.handler
@@ -274,4 +288,4 @@ resources:
 outputs:
   ApiEndpoint:
     Description: "API Gateway endpoint URL"
-    Value: !Ref ActivityApi
+    Value: !Sub "https://${ActivityApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}/"

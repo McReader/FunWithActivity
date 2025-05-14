@@ -15,11 +15,9 @@ exports.handler = async (event) => {
 };
 
 const fetchUserRecommendations = async (record) => {
-  const userId = record.userId;
-  const height = record.height;
-  const weight = record.weight;
+  const { userId, height, weight } = record;
 
-  const response = await axios.post('https://a2da22tugdqsame4ckd3oohkmu0tnbne.lambda-url.eu-central-1.on.aws/services/service2', {
+  const response = await axios.post(process.env.API_URL, {
     "measurements": {
       "mass": 184.0,
       "height": 6.036

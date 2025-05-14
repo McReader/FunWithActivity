@@ -1,0 +1,9 @@
+POST {{apiGatewayUrl}}/activity
+Content-Type: application/json
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "body-params",
+  "weight": 70,
+  "height": 168
+}

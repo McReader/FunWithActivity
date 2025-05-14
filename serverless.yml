@@ -27,6 +27,12 @@ provider:
             - kinesis:DescribeStream
             - kinesis:ListShards
           Resource: !GetAtt ActivityStream.Arn
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:GetItem
+          Resource: !GetAtt UserRecommendationsTable.Arn
 
 functions:
   processStreamLogs:
@@ -118,6 +124,18 @@ resources:
                     - dynamodb:DescribeStream
                     - dynamodb:ListStreams
                   Resource: !GetAtt UserStatsTable.StreamArn
+
+    UserRecommendationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-user-recommendations
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
 
     StatesExecutionRole:
       Type: AWS::IAM::Role

@@ -1,0 +1,46 @@
+[
+  {
+    "550e8400-e29b-41d4-a716-446655440000": [
+      {
+        "source": "serviceA",
+        "title": "Avoid sugar!",
+        "details": "Carefully balance your sugar consumption due to high risk of heart complications",
+        "priority": 833
+      },
+      {
+        "source": "serviceA",
+        "title": "Exercise often!",
+        "details": "Repeated physical exercise could help avoid future veins troubles",
+        "priority": 438
+      }
+    ]
+  },
+  {
+    "550e8400-e29b-41d4-a716-446655440000": [
+      {
+        "source": "serviceB",
+        "title": "Time to stand up",
+        "details": "Sitting lifestyle could affect your future health",
+        "priority": 690
+      },
+      {
+        "source": "serviceB",
+        "title": "Avoid sugar!",
+        "details": "Carefully balance your sugar consumption due to high risk of heart complications",
+        "priority": 823
+      },
+      {
+        "source": "serviceB",
+        "title": "Drink more still water",
+        "details": "Try to consume at least 2 litres of water daily",
+        "priority": 528
+      },
+      {
+        "source": "serviceB",
+        "title": "Go for a physical check up",
+        "details": "Don't forget to visit your health provider for a check-up",
+        "priority": 606
+      }
+    ]
+  }
+]

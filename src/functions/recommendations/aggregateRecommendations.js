@@ -1,102 +1,50 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const {
-  DynamoDBDocumentClient,
-  PutCommand,
-  DeleteCommand
-} = require("@aws-sdk/lib-dynamodb");
+const { DynamoDBClient, UpdateItemCommand } = require("@aws-sdk/client-dynamodb");
+const { marshall } = require("@aws-sdk/util-dynamodb");
 
 const client = new DynamoDBClient();
-const docClient = DynamoDBDocumentClient.from(client);
 
-const handler = async (event) => {
-  try {
-    const userIds = new Set(event.flatMap(result => Object.keys(result)));
+exports.handler = async (event) => {
+  const mergedRecommendations = mergeRecommendations(event);
+  const userIds = Array.from(new Set(Object.keys(mergedRecommendations)));
 
-    await deleteExistingRecommendations(userIds);
+  const promises = userIds.map((userId) => updateUserRecommendations(mergedRecommendations, userId));
 
-    const mergedRecommendations = mergeRecommendations(event);
-
-    await storeRecommendations(mergedRecommendations);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'Successfully aggregated recommendations',
-        processedUsers: userIds.size,
-        recommendationsCount: Object.keys(mergedRecommendations).length
-      })
-    };
-
-  } catch (error) {
-    console.error('Error aggregating recommendations:', error);
-    throw error;
-  }
+  await Promise.all(promises);
 };
 
-async function deleteExistingRecommendations(userIds) {
-  const deletePromises = Array.from(userIds).map(userId => {
-    const deleteCommand = new DeleteCommand({
-      TableName: process.env.RECOMMENDATIONS_TABLE,
-      Key: {
-        id: 'recommendations' // assuming this is your primary key
-      },
-      ConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: {
-        ':userId': userId
-      }
-    });
-    return docClient.send(deleteCommand);
+function updateUserRecommendations(mergedRecommendations, userId) {
+  const userRecommendations = mergedRecommendations[userId];
+  const command = new UpdateItemCommand({
+    TableName: process.env.RECOMMENDATIONS_TABLE,
+    Key: {
+      userId: { S: userId.toString() },
+    },
+    ExpressionAttributeValues: marshall({
+      ':recommendations': userRecommendations,
+      ':timestamp': new Date().toISOString(),
+    }),
+    ReturnValues: 'ALL_NEW',
+    UpdateExpression: 'SET recommendations = :recommendations, lastUpdatedAt = :timestamp',
   });
-
-  // Some deletes might fail if records don't exist, that's OK
-  await Promise.allSettled(deletePromises);
+  return client.send(command);
 }
 
-function mergeRecommendations(resultsArray) {
-  const mergedRecommendations = {};
+function mergeRecommendations(sources) {
+  return sources.reduce((acc, value) => {
+    const entries = Object.entries(value);
 
-  resultsArray.forEach(resultSet => {
-    const userId = Object.keys(resultSet)[0];
-    const recommendations = resultSet[userId];
-
-    if (!mergedRecommendations[userId]) {
-      mergedRecommendations[userId] = new Map();
+    if (!entries.length) {
+      return acc;
     }
 
-    recommendations.forEach(rec => {
-      const key = `${rec.title}-${rec.details}`;
-      const existingRec = mergedRecommendations[userId].get(key);
+    const [userId, recommendations] = entries[0];
 
-      if (!existingRec || existingRec.priority < rec.priority) {
-        mergedRecommendations[userId].set(key, rec);
-      }
-    });
-  });
+    if (!acc[userId]) {
+      acc[userId] = recommendations;
+    } else {
+      acc[userId].push(...recommendations);
+    }
 
-  Object.keys(mergedRecommendations).forEach(userId => {
-    mergedRecommendations[userId] = Array.from(mergedRecommendations[userId].values());
-  });
-
-  return mergedRecommendations;
+    return acc;
+  }, {});
 }
-
-async function storeRecommendations(mergedRecommendations) {
-  const storePromises = Object.entries(mergedRecommendations).map(([userId, recommendations]) => {
-    const putCommand = new PutCommand({
-      TableName: process.env.RECOMMENDATIONS_TABLE,
-      Item: {
-        id: 'recommendations', // your primary key
-        userId: userId,
-        recommendations,
-        updatedAt: new Date().toISOString()
-      }
-    });
-    return docClient.send(putCommand);
-  });
-
-  await Promise.all(storePromises);
-}
-
-module.exports = {
-  handler
-};

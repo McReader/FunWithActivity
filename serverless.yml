@@ -41,6 +41,7 @@ functions:
 
   processUserStatsChanges:
     handler: src/functions/recommendations/processUserStatsChanges.handler
+    role: !GetAtt ProcessUserStatsChangesRole.Arn
     events:
       - stream:
           type: dynamodb
@@ -48,6 +49,8 @@ functions:
           batchSize: 25
           startingPosition: LATEST
           maximumRetryAttempts: 3
+    environment:
+      STATE_MACHINE_ARN: !Ref RecommendationsWorkflow  # Add this
 
   getRecommendationsA:
     handler: src/functions/recommendations/getRecommendationsA.handler
@@ -83,17 +86,90 @@ resources:
         StreamSpecification:
           StreamViewType: NEW_IMAGE
 
-    UserRecommendationsTable:
-      Type: AWS::DynamoDB::Table
+    ProcessUserStatsChangesRole:
+      Type: AWS::IAM::Role
       Properties:
-        TableName: ${self:service}-${self:provider.stage}-user-recommendations
-        BillingMode: PAY_PER_REQUEST
-        AttributeDefinitions:
-          - AttributeName: userId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: userId
-            KeyType: HASH
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: StepFunctionsInvoke
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - states:StartExecution
+                  Resource: !Ref RecommendationsWorkflow
+          - PolicyName: DynamoDBStreamRead
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:GetRecords
+                    - dynamodb:GetShardIterator
+                    - dynamodb:DescribeStream
+                    - dynamodb:ListStreams
+                  Resource: !GetAtt UserStatsTable.StreamArn
+
+    StatesExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: states.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: LambdaInvocation
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                  Resource:
+                    - !GetAtt GetRecommendationsALambdaFunction.Arn
+                    - !GetAtt GetRecommendationsBLambdaFunction.Arn
+                    - !GetAtt AggregateRecommendationsLambdaFunction.Arn
+
+    RecommendationsWorkflow:
+      Type: AWS::StepFunctions::StateMachine
+      Properties:
+        StateMachineName: ${self:service}-${self:provider.stage}-recommendations
+        Definition:
+          StartAt: ParallelRecommendations
+          States:
+            ParallelRecommendations:
+              Type: Parallel
+              Next: AggregateResults
+              Branches:
+                - StartAt: GetRecommendationsA
+                  States:
+                    GetRecommendationsA:
+                      Type: Task
+                      Resource: !GetAtt GetRecommendationsALambdaFunction.Arn
+                      End: true
+                - StartAt: GetRecommendationsB
+                  States:
+                    GetRecommendationsB:
+                      Type: Task
+                      Resource: !GetAtt GetRecommendationsBLambdaFunction.Arn
+                      End: true
+            AggregateResults:
+              Type: Task
+              Resource: !GetAtt AggregateRecommendationsLambdaFunction.Arn
+              End: true
+        RoleArn: !GetAtt StatesExecutionRole.Arn
 
     ApiGatewayRole:
       Type: AWS::IAM::Role

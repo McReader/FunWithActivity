@@ -6,14 +6,13 @@
 #  "weight": 85,
 #  "height": 195
 #}'
-POST https://lyrhuj7upl.execute-api.us-east-1.amazonaws.com/dev/activity
+POST https://a2da22tugdqsame4ckd3oohkmu0tnbne.lambda-url.eu-central-1.on.aws/services/service1
 Content-Type: application/json
 
 {
-  "userId": "550e8400-e29b-41d4-a716-446655440000",
-  "type": "body-params",
-  "weight": 70,
-  "height": 168
+  "height": 184.0,
+  "weight": 84.0,
+  "token": "service1-dev"
 }
 
 ###

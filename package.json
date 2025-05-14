@@ -10,5 +10,8 @@
     "remove": "serverless remove"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.808.0"
+  }
 }

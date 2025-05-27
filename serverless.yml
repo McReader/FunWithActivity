@@ -51,7 +51,7 @@ package:
 
 functions:
   processStreamLogs:
-    handler: src/functions/ingestion/processStreamLogs.handler
+    handler: functions/ingestion/processStreamLogs.handler
     events:
       - stream:
           type: kinesis
@@ -61,7 +61,7 @@ functions:
           maximumRetryAttempts: 3
 
   processUserStatsChanges:
-    handler: src/functions/recommendations/processUserStatsChanges.handler
+    handler: functions/recommendations/processUserStatsChanges.handler
     role: !GetAtt ProcessUserStatsChangesRole.Arn
     events:
       - stream:
@@ -74,25 +74,25 @@ functions:
       STATE_MACHINE_ARN: !Ref RecommendationsWorkflow  # Add this
 
   getRecommendationsA:
-    handler: src/functions/recommendations/getRecommendationsA.handler
+    handler: functions/recommendations/getRecommendationsA.handler
     environment:
       API_URL: ${self:custom.recommendationsA.${self:provider.stage}.url}
     timeout: 10
 
   getRecommendationsB:
-    handler: src/functions/recommendations/getRecommendationsB.handler
+    handler: functions/recommendations/getRecommendationsB.handler
     environment:
       API_URL: ${self:custom.recommendationsB.${self:provider.stage}.url}
     timeout: 10
 
   aggregateRecommendations:
-    handler: src/functions/recommendations/aggregateRecommendations.handler
+    handler: functions/recommendations/aggregateRecommendations.handler
 
   getUserRecommendations:
-    handler: src/functions/api/getUserRecommendations.handler
+    handler: functions/api/getUserRecommendations.handler
 
   getUserStats:
-    handler: src/functions/api/getUserStats.handler
+    handler: functions/api/getUserStats.handler
 
 resources:
   Resources:

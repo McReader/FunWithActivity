@@ -14,7 +14,7 @@ FunWithActivity is a serverless AWS-based health and fitness tracking platform. 
 
 ## Project Structure
 
-- `src/functions/` – Lambda functions for ingestion, recommendations, and API
+- `functions/` – Lambda functions for ingestion, recommendations, and API
 - `website/` – Next.js frontend app
 - `mocks/` – Example events for local testing
 - `scripts/` – HTTP request samples for API testing
